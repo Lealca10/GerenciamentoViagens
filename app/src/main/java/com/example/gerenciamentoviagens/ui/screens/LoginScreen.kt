@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.R
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -26,6 +25,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.gerenciamentoviagens.ui.components.PasswordField
 import com.example.gerenciamentoviagens.viewmodel.AuthViewModel
+import com.example.gerenciamentoviagens.R
+
 
 @Composable
 fun LoginScreen(nav: NavHostController, vm: AuthViewModel) {
@@ -38,13 +39,13 @@ fun LoginScreen(nav: NavHostController, vm: AuthViewModel) {
         verticalArrangement = Arrangement.Center
     ) {
 
-//        Image(
-//            painter = painterResource(id = R.drawable.travel.png),
-//            contentDescription = "Logo",
-//            modifier = Modifier
-//                .size(140.dp)
-//                .padding(bottom = 16.dp)
-//        )
+        Image(
+            painter = painterResource(id = R.drawable.aviao),
+            contentDescription = "Logo",
+            modifier = Modifier
+                .size(140.dp)
+                .padding(bottom = 16.dp)
+        )
 
         Text(
             text = "Bem-vindo",
@@ -59,7 +60,7 @@ fun LoginScreen(nav: NavHostController, vm: AuthViewModel) {
             onValueChange = { vm.email = it },
             label = { Text("Email") },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
+            //shape = RoundedCornerShape(12.dp)
         )
 
         Spacer(modifier = Modifier.height(12.dp))
