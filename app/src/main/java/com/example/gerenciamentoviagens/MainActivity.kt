@@ -20,23 +20,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            NavGraph()
+            GerenciamentoViagensTheme {
+                NavGraph(context = this@MainActivity)
+            }
         }
     }
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    GerenciamentoViagensTheme {
-        Greeting("Android")
-    }
-}
