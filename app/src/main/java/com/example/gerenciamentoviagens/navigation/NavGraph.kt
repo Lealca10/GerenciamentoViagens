@@ -7,6 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.*
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import com.example.gerenciamentoviagens.data.local.AppDatabase
 import com.example.gerenciamentoviagens.data.repository.UsuarioRepository
 import com.example.gerenciamentoviagens.ui.screens.ForgotPasswordScreen
@@ -50,8 +52,12 @@ fun NavGraph(context: Context) {
             ForgotPasswordScreen(navController, vm)
         }
 
-        composable("menu") {
-            MenuScreen()
+        composable(
+            route = "menu/{email}",
+            arguments = listOf(navArgument("email") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val email = backStackEntry.arguments?.getString("email") ?: ""
+            MenuScreen(email)
         }
     }
 }

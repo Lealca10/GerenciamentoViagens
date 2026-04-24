@@ -78,7 +78,7 @@ fun LoginScreen(nav: NavHostController, vm: AuthViewModel) {
         Button(
             onClick = {
                 vm.login {
-                    nav.navigate("menu")
+                    nav.navigate("menu/${vm.email}")
                 }
             },
             modifier = Modifier
