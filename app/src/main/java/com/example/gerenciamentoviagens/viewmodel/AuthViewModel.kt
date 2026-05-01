@@ -17,13 +17,24 @@ class AuthViewModel(private val repository: UsuarioRepository) : ViewModel() {
 
     var errorMessage by mutableStateOf("")
     var successMessage by mutableStateOf("")
+    
+    var loggedUser by mutableStateOf<Usuario?>(null)
 
-    fun login(onSuccess: () -> Unit) {
+    fun login(onSuccess: (Usuario) -> Unit) {
         if (email.isBlank() || password.isBlank()) {
             errorMessage = "Preencha todos os campos"
-        } else {
-            errorMessage = ""
-            onSuccess()
+            return
+        }
+        
+        viewModelScope.launch {
+            val user = repository.login(email, password)
+            if (user != null) {
+                errorMessage = ""
+                loggedUser = user
+                onSuccess(user)
+            } else {
+                errorMessage = "Usuário ou senha inválidos"
+            }
         }
     }
 

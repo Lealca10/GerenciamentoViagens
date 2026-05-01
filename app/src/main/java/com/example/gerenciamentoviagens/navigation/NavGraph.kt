@@ -11,45 +11,56 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.example.gerenciamentoviagens.data.local.AppDatabase
 import com.example.gerenciamentoviagens.data.repository.UsuarioRepository
+import com.example.gerenciamentoviagens.data.repository.ViagemRepository
+import com.example.gerenciamentoviagens.ui.screens.AboutScreen
 import com.example.gerenciamentoviagens.ui.screens.ForgotPasswordScreen
 import com.example.gerenciamentoviagens.ui.screens.MenuScreen
+import com.example.gerenciamentoviagens.ui.screens.NewTripScreen
 import com.example.gerenciamentoviagens.ui.screens.RegisterScreen
+import com.example.gerenciamentoviagens.ui.screens.TripsListScreen
 import com.example.gerenciamentoviagens.viewmodel.AuthViewModel
+import com.example.gerenciamentoviagens.viewmodel.ViagemViewModel
 
 @Composable
 fun NavGraph(context: Context) {
 
     val navController = rememberNavController()
 
-    // 🔹 Banco
     val db = AppDatabase.getDatabase(context)
-    val dao = db.usuarioDao()
+    val usuarioDao = db.usuarioDao()
+    val viagemDao = db.viagemDao()
 
-    // 🔹 Repository
-    val repository = UsuarioRepository(dao)
+    val usuarioRepository = UsuarioRepository(usuarioDao)
+    val viagemRepository = ViagemRepository(viagemDao)
 
-    // 🔹 ViewModel com factory
-    val vm: AuthViewModel = viewModel(
+    val authVm: AuthViewModel = viewModel(
         factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return AuthViewModel(repository) as T
+                return AuthViewModel(usuarioRepository) as T
             }
         }
     )
 
-    // 🔹 Navegação
+    val viagemVm: ViagemViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return ViagemViewModel(viagemRepository) as T
+            }
+        }
+    )
+
     NavHost(navController = navController, startDestination = "login") {
 
         composable("login") {
-            LoginScreen(navController, vm)
+            LoginScreen(navController, authVm)
         }
 
         composable("register") {
-            RegisterScreen(navController, vm)
+            RegisterScreen(navController, authVm)
         }
 
         composable("forgot") {
-            ForgotPasswordScreen(navController, vm)
+            ForgotPasswordScreen(navController, authVm)
         }
 
         composable(
@@ -57,7 +68,26 @@ fun NavGraph(context: Context) {
             arguments = listOf(navArgument("email") { type = NavType.StringType })
         ) { backStackEntry ->
             val email = backStackEntry.arguments?.getString("email") ?: ""
-            MenuScreen(email)
+            // Passamos o viagemVm para o MenuScreen conseguir chamar prepararNovaViagem()
+            MenuScreen(navController, email, authVm.loggedUser, viagemVm)
+        }
+
+        composable("new_trip") {
+            val user = authVm.loggedUser
+            if (user != null) {
+                NewTripScreen(navController, viagemVm, user.id)
+            }
+        }
+
+        composable("trips_list") {
+            val user = authVm.loggedUser
+            if (user != null) {
+                TripsListScreen(navController, viagemVm, user.id)
+            }
+        }
+
+        composable("about") {
+            AboutScreen(navController)
         }
     }
 }
