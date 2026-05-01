@@ -8,4 +8,8 @@ class UsuarioRepository(private val dao: UsuarioDao) {
     suspend fun salvar(usuario: Usuario) {
         dao.inserir(usuario)
     }
+
+    suspend fun login(email: String, senha: String): Usuario? {
+        return dao.login(email, senha)
+    }
 }
