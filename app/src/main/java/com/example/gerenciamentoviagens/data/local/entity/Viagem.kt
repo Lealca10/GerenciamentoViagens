@@ -12,5 +12,6 @@ data class Viagem(
     val dataInicio: Long,
     val dataFim: Long,
     val orcamento: Double,
+    val gastos: Double = 0.0, // Nova informação
     val userId: Int
 )

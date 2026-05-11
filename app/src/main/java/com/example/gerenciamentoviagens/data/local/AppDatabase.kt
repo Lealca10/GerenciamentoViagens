@@ -9,7 +9,7 @@ import com.example.gerenciamentoviagens.data.local.dao.ViagemDao
 import com.example.gerenciamentoviagens.data.local.entity.Usuario
 import com.example.gerenciamentoviagens.data.local.entity.Viagem
 
-@Database(entities = [Usuario::class, Viagem::class], version = 2)
+@Database(entities = [Usuario::class, Viagem::class], version = 1, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun usuarioDao(): UsuarioDao
@@ -24,9 +24,9 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "app_database"
+                    "db_viagens_v4" // Novo nome para garantir reset total
                 )
-                .fallbackToDestructiveMigration() // Facilitando para fins de desenvolvimento inicial
+                .fallbackToDestructiveMigration()
                 .build()
                 INSTANCE = instance
                 instance

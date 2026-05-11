@@ -25,11 +25,24 @@ class ViagemViewModel(private val repository: ViagemRepository) : ViewModel() {
     private val _viagens = MutableStateFlow<List<Viagem>>(emptyList())
     val viagens: StateFlow<List<Viagem>> = _viagens.asStateFlow()
 
+    // Nova funcionalidade: Viagem Atual
+    var viagemAtual by mutableStateOf<Viagem?>(null)
+    var cidadeAtual by mutableStateOf<String?>(null)
+    var carregandoLocalizacao by mutableStateOf(false)
+
     fun carregarViagens(userId: Int) {
         viewModelScope.launch {
             repository.getViagensByUser(userId).collect {
                 _viagens.value = it
             }
+        }
+    }
+
+    fun buscarViagemPelaCidade(userId: Int, cidade: String) {
+        cidadeAtual = cidade
+        viewModelScope.launch {
+            val dataAtual = System.currentTimeMillis()
+            viagemAtual = repository.getViagemAtual(userId, cidade, dataAtual)
         }
     }
 

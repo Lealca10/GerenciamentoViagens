@@ -27,13 +27,17 @@ class AuthViewModel(private val repository: UsuarioRepository) : ViewModel() {
         }
         
         viewModelScope.launch {
-            val user = repository.login(email, password)
-            if (user != null) {
-                errorMessage = ""
-                loggedUser = user
-                onSuccess(user)
-            } else {
-                errorMessage = "Usuário ou senha inválidos"
+            try {
+                val user = repository.login(email, password)
+                if (user != null) {
+                    errorMessage = ""
+                    loggedUser = user
+                    onSuccess(user)
+                } else {
+                    errorMessage = "Usuário ou senha inválidos"
+                }
+            } catch (e: Exception) {
+                errorMessage = "Erro ao realizar login. Tente novamente."
             }
         }
     }
@@ -63,7 +67,7 @@ class AuthViewModel(private val repository: UsuarioRepository) : ViewModel() {
                 errorMessage = ""
                 onSuccess()
             } catch (e: Exception) {
-                errorMessage = "Erro ao salvar usuário"
+                errorMessage = "Erro ao salvar usuário. O e-mail pode já estar em uso."
             }
         }
     }

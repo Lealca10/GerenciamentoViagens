@@ -14,4 +14,7 @@ class ViagemRepository(private val viagemDao: ViagemDao) {
     suspend fun delete(viagem: Viagem) = viagemDao.delete(viagem)
     
     suspend fun getViagemById(id: Int) = viagemDao.getViagemById(id)
+
+    suspend fun getViagemAtual(userId: Int, cidade: String, dataAtual: Long) = 
+        viagemDao.getViagemAtual(userId, cidade, dataAtual)
 }
