@@ -24,6 +24,7 @@ import androidx.navigation.NavHostController
 import com.example.gerenciamentoviagens.data.local.entity.Usuario
 import com.example.gerenciamentoviagens.utils.LocationHelper
 import com.example.gerenciamentoviagens.viewmodel.ViagemViewModel
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -34,7 +35,7 @@ fun MenuScreen(nav: NavHostController, email: String, user: Usuario?, viagemVm: 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    val dateFormatter = remember { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) }
 
     val locationHelper = remember { LocationHelper(context) }
 
@@ -44,23 +45,27 @@ fun MenuScreen(nav: NavHostController, email: String, user: Usuario?, viagemVm: 
         val granted = permissions.entries.all { it.value }
         if (granted && user != null) {
             scope.launch {
-                val cidade = locationHelper.getCidadeAtual()
-                if (cidade != null) {
-                    viagemVm.buscarViagemPelaCidade(user.id, cidade)
+                locationHelper.getCidadeAtualFlow().collectLatest { cidade ->
+                    if (cidade != null) {
+                        viagemVm.buscarViagemPelaCidade(user.id, cidade)
+                    }
                 }
             }
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(user) {
+        if (user == null) return@LaunchedEffect
+
         val hasPermission = ContextCompat.checkSelfPermission(
             context, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
-        if (hasPermission && user != null) {
-            val cidade = locationHelper.getCidadeAtual()
-            if (cidade != null) {
-                viagemVm.buscarViagemPelaCidade(user.id, cidade)
+        if (hasPermission) {
+            locationHelper.getCidadeAtualFlow().collectLatest { cidade ->
+                if (cidade != null) {
+                    viagemVm.buscarViagemPelaCidade(user.id, cidade)
+                }
             }
         } else {
             permissionLauncher.launch(
@@ -199,8 +204,8 @@ fun MenuScreen(nav: NavHostController, email: String, user: Usuario?, viagemVm: 
                                 Text("Início: ${dateFormatter.format(Date(viagem.dataInicio))}")
                                 Text("Fim: ${dateFormatter.format(Date(viagem.dataFim))}")
                                 Text("Tipo: ${viagem.tipo}")
-                                Text("Orçamento: R$ ${String.format("%.2f", viagem.orcamento)}")
-                                Text("Total de Gastos: R$ ${String.format("%.2f", viagem.gastos)}")
+                                Text("Orçamento: R$ ${String.format(Locale.getDefault(), "%.2f", viagem.orcamento)}")
+                                Text("Total de Gastos: R$ ${String.format(Locale.getDefault(), "%.2f", viagem.gastos)}")
                             }
                         }
                     } else {

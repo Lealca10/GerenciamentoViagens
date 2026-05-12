@@ -3,9 +3,14 @@ package com.example.gerenciamentoviagens.utils
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Geocoder
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
-import kotlinx.coroutines.tasks.await
+import android.os.Looper
+import android.util.Log
+import com.google.android.gms.location.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 class LocationHelper(private val context: Context) {
@@ -13,23 +18,60 @@ class LocationHelper(private val context: Context) {
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
     @SuppressLint("MissingPermission")
-    suspend fun getCidadeAtual(): String? {
-        return try {
-            val location = fusedLocationClient.getCurrentLocation(
-                Priority.PRIORITY_HIGH_ACCURACY,
-                null
-            ).await()
+    fun getCidadeAtualFlow(): Flow<String?> = callbackFlow {
+        val geocoder = Geocoder(context, Locale.getDefault())
 
-            location?.let {
-                val geocoder = Geocoder(context, Locale.getDefault())
-                // Geocoder.getFromLocation is deprecated in API 33+, but for simplicity in this exercise 
-                // we use the synchronous version. In a real app, we'd use the callback version.
-                val addresses = geocoder.getFromLocation(it.latitude, it.longitude, 1)
-                addresses?.firstOrNull()?.locality
+        val locationCallback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                val location = result.lastLocation ?: return
+                
+                launch(Dispatchers.IO) {
+                    try {
+                        @Suppress("DEPRECATION")
+                        val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                        val address = addresses?.firstOrNull()
+                        
+                        // Busca o nome da cidade tentando vários campos possíveis
+                        val cidade = address?.locality ?: address?.subAdminArea ?: address?.subLocality ?: address?.adminArea
+                        
+                        if (cidade != null) {
+                            Log.d("LocationHelper", "Cidade atualizada: $cidade")
+                            trySend(cidade)
+                        }
+                    } catch (e: Exception) {
+                        Log.e("LocationHelper", "Erro no Geocoder", e)
+                    }
+                }
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
+        }
+
+        // Intervalo de 1 segundo para resposta imediata
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000)
+            .setMinUpdateIntervalMillis(500)
+            .build()
+
+        fusedLocationClient.requestLocationUpdates(
+            locationRequest,
+            locationCallback,
+            Looper.getMainLooper()
+        )
+
+        // Pega a última conhecida para carregar instantaneamente ao abrir
+        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+            if (location != null) {
+                launch(Dispatchers.IO) {
+                    try {
+                        @Suppress("DEPRECATION")
+                        val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                        val cidade = addresses?.firstOrNull()?.locality
+                        if (cidade != null) trySend(cidade)
+                    } catch (e: Exception) {}
+                }
+            }
+        }
+
+        awaitClose {
+            fusedLocationClient.removeLocationUpdates(locationCallback)
         }
     }
 }
