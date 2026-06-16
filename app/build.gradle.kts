@@ -62,9 +62,13 @@ dependencies {
     // Lifecycle
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
 
-    // Location
+    // Location and Maps
     implementation(libs.play.services.location)
+    implementation(libs.osmdroid.android)
     implementation(libs.kotlinx.coroutines.play.services)
+
+    // Image Loading
+    implementation(libs.coil.compose)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
