@@ -32,6 +32,8 @@ class ViagemViewModel(private val repository: ViagemRepository) : ViewModel() {
     // Funcionalidade: Viagem Atual
     var viagemAtual by mutableStateOf<Viagem?>(null)
     var cidadeAtual by mutableStateOf<String?>(null)
+    var latitudeAtual by mutableStateOf<Double?>(null)
+    var longitudeAtual by mutableStateOf<Double?>(null)
 
     fun carregarViagens(userId: Int) {
         viewModelScope.launch {

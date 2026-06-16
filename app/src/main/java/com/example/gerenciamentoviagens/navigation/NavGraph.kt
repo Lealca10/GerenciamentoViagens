@@ -10,15 +10,12 @@ import androidx.navigation.compose.*
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.example.gerenciamentoviagens.data.local.AppDatabase
+import com.example.gerenciamentoviagens.data.repository.FotoRepository
 import com.example.gerenciamentoviagens.data.repository.UsuarioRepository
 import com.example.gerenciamentoviagens.data.repository.ViagemRepository
-import com.example.gerenciamentoviagens.ui.screens.AboutScreen
-import com.example.gerenciamentoviagens.ui.screens.ForgotPasswordScreen
-import com.example.gerenciamentoviagens.ui.screens.MenuScreen
-import com.example.gerenciamentoviagens.ui.screens.NewTripScreen
-import com.example.gerenciamentoviagens.ui.screens.RegisterScreen
-import com.example.gerenciamentoviagens.ui.screens.TripsListScreen
+import com.example.gerenciamentoviagens.ui.screens.*
 import com.example.gerenciamentoviagens.viewmodel.AuthViewModel
+import com.example.gerenciamentoviagens.viewmodel.FotoViewModel
 import com.example.gerenciamentoviagens.viewmodel.ViagemViewModel
 
 @Composable
@@ -29,9 +26,11 @@ fun NavGraph(context: Context) {
     val db = AppDatabase.getDatabase(context)
     val usuarioDao = db.usuarioDao()
     val viagemDao = db.viagemDao()
+    val fotoDao = db.fotoDao()
 
     val usuarioRepository = UsuarioRepository(usuarioDao)
     val viagemRepository = ViagemRepository(viagemDao)
+    val fotoRepository = FotoRepository(fotoDao)
 
     val authVm: AuthViewModel = viewModel(
         factory = object : ViewModelProvider.Factory {
@@ -45,6 +44,14 @@ fun NavGraph(context: Context) {
         factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return ViagemViewModel(viagemRepository) as T
+            }
+        }
+    )
+
+    val fotoVm: FotoViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return FotoViewModel(fotoRepository) as T
             }
         }
     )
@@ -70,6 +77,14 @@ fun NavGraph(context: Context) {
             val email = backStackEntry.arguments?.getString("email") ?: ""
             // Passamos o viagemVm para o MenuScreen conseguir chamar prepararNovaViagem()
             MenuScreen(navController, email, authVm.loggedUser, viagemVm)
+        }
+
+        composable(
+            route = "photos/{viagemId}",
+            arguments = listOf(navArgument("viagemId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val viagemId = backStackEntry.arguments?.getInt("viagemId") ?: 0
+            PhotosScreen(navController, fotoVm, viagemId)
         }
 
         composable("new_trip") {
