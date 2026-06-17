@@ -1,11 +1,13 @@
 package com.example.gerenciamentoviagens.ui.screens
 
+import android.Manifest
 import android.content.Context
-import android.graphics.Bitmap
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -16,17 +18,17 @@ import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.gerenciamentoviagens.viewmodel.FotoViewModel
 import java.io.File
-import java.io.FileOutputStream
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,7 +41,7 @@ fun PhotosScreen(nav: NavHostController, fotoVm: FotoViewModel, viagemId: Int) {
         fotoVm.carregarFotos(viagemId)
     }
 
-    var tempImageUri by remember { mutableStateOf<Uri?>(null) }
+    var tempImageUri by rememberSaveable { mutableStateOf<String?>(null) }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -53,7 +55,24 @@ fun PhotosScreen(nav: NavHostController, fotoVm: FotoViewModel, viagemId: Int) {
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
         if (success && tempImageUri != null) {
-            fotoVm.adicionarFoto(viagemId, tempImageUri.toString())
+            fotoVm.adicionarFoto(viagemId, tempImageUri!!)
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            try {
+                val uri = createTempPictureUri(context)
+                tempImageUri = uri.toString()
+                cameraLauncher.launch(uri)
+            } catch (e: Exception) {
+                Log.e("PhotosScreen", "Erro ao iniciar câmera", e)
+                Toast.makeText(context, "Erro ao iniciar câmera", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(context, "Permissão da câmera negada", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -72,9 +91,22 @@ fun PhotosScreen(nav: NavHostController, fotoVm: FotoViewModel, viagemId: Int) {
             Column {
                 SmallFloatingActionButton(
                     onClick = {
-                        val uri = createTempPictureUri(context)
-                        tempImageUri = uri
-                        cameraLauncher.launch(uri)
+                        val hasPermission = ContextCompat.checkSelfPermission(
+                            context, Manifest.permission.CAMERA
+                        ) == PackageManager.PERMISSION_GRANTED
+                        
+                        try {
+                            if (hasPermission) {
+                                val uri = createTempPictureUri(context)
+                                tempImageUri = uri.toString()
+                                cameraLauncher.launch(uri)
+                            } else {
+                                permissionLauncher.launch(Manifest.permission.CAMERA)
+                            }
+                        } catch (e: Exception) {
+                            Log.e("PhotosScreen", "Erro no clique da câmera", e)
+                            Toast.makeText(context, "Erro: ${e.message}", Toast.LENGTH_LONG).show()
+                        }
                     },
                     modifier = Modifier.padding(bottom = 8.dp)
                 ) {
@@ -116,10 +148,20 @@ fun PhotosScreen(nav: NavHostController, fotoVm: FotoViewModel, viagemId: Int) {
 }
 
 fun createTempPictureUri(context: Context): Uri {
-    val tempFile = File(context.externalCacheDir, "temp_image_${UUID.randomUUID()}.jpg")
+    val directory = File(context.cacheDir, "images")
+    if (!directory.exists()) {
+        directory.mkdirs()
+    }
+    
+    val tempFile = File(directory, "temp_image_${UUID.randomUUID()}.jpg")
+    // Algumas câmeras precisam que o arquivo exista
+    if (!tempFile.exists()) {
+        tempFile.createNewFile()
+    }
+    
     return FileProvider.getUriForFile(
         context,
-        "${context.packageName}.fileprovider",
+        "com.example.gerenciamentoviagens.fileprovider",
         tempFile
     )
 }
