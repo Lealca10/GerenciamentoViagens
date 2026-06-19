@@ -196,7 +196,9 @@ fun MenuScreen(nav: NavHostController, email: String, user: Usuario?, viagemVm: 
                             icon = { Icon(Icons.Default.Map, contentDescription = null) },
                             label = { Text("Roteiro") },
                             selected = false,
-                            onClick = { /* Futuro */ }
+                            onClick = {
+                                nav.navigate("roteiro/${viagemVm.viagemAtual!!.id}")
+                            }
                         )
                         NavigationBarItem(
                             icon = { Icon(Icons.Default.PhotoLibrary, contentDescription = null) },

@@ -4,19 +4,26 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.example.gerenciamentoviagens.data.local.dao.AtividadeViagemDao
 import com.example.gerenciamentoviagens.data.local.dao.FotoDao
 import com.example.gerenciamentoviagens.data.local.dao.UsuarioDao
 import com.example.gerenciamentoviagens.data.local.dao.ViagemDao
+import com.example.gerenciamentoviagens.data.local.entity.AtividadeViagem
 import com.example.gerenciamentoviagens.data.local.entity.Foto
 import com.example.gerenciamentoviagens.data.local.entity.Usuario
 import com.example.gerenciamentoviagens.data.local.entity.Viagem
 
-@Database(entities = [Usuario::class, Viagem::class, Foto::class], version = 2, exportSchema = false)
+@Database(
+    entities = [Usuario::class, Viagem::class, Foto::class, AtividadeViagem::class],
+    version = 1,
+    exportSchema = false
+)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun usuarioDao(): UsuarioDao
     abstract fun viagemDao(): ViagemDao
     abstract fun fotoDao(): FotoDao
+    abstract fun atividadeViagemDao(): AtividadeViagemDao
 
     companion object {
         @Volatile
@@ -27,7 +34,7 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "db_viagens_v4" // Novo nome para garantir reset total
+                    "viagens_final_db"
                 )
                 .fallbackToDestructiveMigration()
                 .build()

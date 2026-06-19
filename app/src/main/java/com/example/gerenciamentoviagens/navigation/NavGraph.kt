@@ -10,12 +10,16 @@ import androidx.navigation.compose.*
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.example.gerenciamentoviagens.data.local.AppDatabase
+import com.example.gerenciamentoviagens.data.remote.RetrofitClient
 import com.example.gerenciamentoviagens.data.repository.FotoRepository
+import com.example.gerenciamentoviagens.data.repository.RoteiroRepository
 import com.example.gerenciamentoviagens.data.repository.UsuarioRepository
 import com.example.gerenciamentoviagens.data.repository.ViagemRepository
 import com.example.gerenciamentoviagens.ui.screens.*
+import com.example.gerenciamentoviagens.utils.EnvReader
 import com.example.gerenciamentoviagens.viewmodel.AuthViewModel
 import com.example.gerenciamentoviagens.viewmodel.FotoViewModel
+import com.example.gerenciamentoviagens.viewmodel.RoteiroViewModel
 import com.example.gerenciamentoviagens.viewmodel.ViagemViewModel
 
 @Composable
@@ -27,10 +31,12 @@ fun NavGraph(context: Context) {
     val usuarioDao = db.usuarioDao()
     val viagemDao = db.viagemDao()
     val fotoDao = db.fotoDao()
+    val atividadeViagemDao = db.atividadeViagemDao()
 
     val usuarioRepository = UsuarioRepository(usuarioDao)
     val viagemRepository = ViagemRepository(viagemDao)
     val fotoRepository = FotoRepository(fotoDao)
+    val roteiroRepository = RoteiroRepository(RetrofitClient.geminiService, atividadeViagemDao)
 
     val authVm: AuthViewModel = viewModel(
         factory = object : ViewModelProvider.Factory {
@@ -56,6 +62,14 @@ fun NavGraph(context: Context) {
         }
     )
 
+    val roteiroVm: RoteiroViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return RoteiroViewModel(roteiroRepository) as T
+            }
+        }
+    )
+
     NavHost(navController = navController, startDestination = "login") {
 
         composable("login") {
@@ -75,7 +89,6 @@ fun NavGraph(context: Context) {
             arguments = listOf(navArgument("email") { type = NavType.StringType })
         ) { backStackEntry ->
             val email = backStackEntry.arguments?.getString("email") ?: ""
-            // Passamos o viagemVm para o MenuScreen conseguir chamar prepararNovaViagem()
             MenuScreen(navController, email, authVm.loggedUser, viagemVm)
         }
 
@@ -85,6 +98,15 @@ fun NavGraph(context: Context) {
         ) { backStackEntry ->
             val viagemId = backStackEntry.arguments?.getInt("viagemId") ?: 0
             PhotosScreen(navController, fotoVm, viagemId)
+        }
+
+        composable(
+            route = "roteiro/{viagemId}",
+            arguments = listOf(navArgument("viagemId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val viagemId = backStackEntry.arguments?.getInt("viagemId") ?: 0
+            val apiKey = EnvReader.getApiKey(context)
+            RoteiroScreen(navController, roteiroVm, viagemId, viagemVm.viagemAtual, apiKey)
         }
 
         composable("new_trip") {

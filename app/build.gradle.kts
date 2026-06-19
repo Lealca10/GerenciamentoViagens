@@ -16,6 +16,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Permite ler o arquivo .env se usar um plugin, mas aqui faremos via código ou BuildConfig manual
+        // Para simplificar, assumirei que a API_KEY será lida de um arquivo ou passada via ViewModel
     }
 
     buildTypes {
@@ -33,6 +36,14 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+    sourceSets {
+        getByName("main") {
+            assets {
+                srcDirs("src\\main\\assets", "src\\main\\assets")
+            }
+        }
     }
 }
 
@@ -69,6 +80,12 @@ dependencies {
 
     // Image Loading
     implementation(libs.coil.compose)
+
+    // Retrofit & Networking
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.okhttp)
+    implementation(libs.gson)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
