@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.TimeZone
+import java.text.Normalizer
 
 class ViagemViewModel(private val repository: ViagemRepository) : ViewModel() {
 
@@ -46,32 +47,35 @@ class ViagemViewModel(private val repository: ViagemRepository) : ViewModel() {
     fun buscarViagemPelaCidade(userId: Int, cidade: String) {
         val cidadeLimpa = cidade.trim()
         cidadeAtual = cidadeLimpa
-        
+
         viewModelScope.launch {
             try {
-                // 1. Pega a data atual no fuso horário local
                 val localCalendar = Calendar.getInstance()
                 val day = localCalendar.get(Calendar.DAY_OF_MONTH)
                 val month = localCalendar.get(Calendar.MONTH)
                 val year = localCalendar.get(Calendar.YEAR)
 
-                // 2. Converte para o timestamp "Meia-noite UTC" para bater com o banco (padrão DatePicker)
                 val utcCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
                     clear()
                     set(year, month, day)
                 }
                 val dataAtualNormalizada = utcCalendar.timeInMillis
-                
-                // 3. Busca no banco
-                val encontrada = repository.getViagemAtual(userId, cidadeLimpa, dataAtualNormalizada)
+
+                val encontrada = repository.getViagemAtual(userId, cidadeLimpa.normalizar(), dataAtualNormalizada)
                 viagemAtual = encontrada
-                
+
                 Log.d("ViagemViewModel", "Busca em $cidadeLimpa (Data: $dataAtualNormalizada): ${if (encontrada != null) "Sucesso" else "Vazio"}")
             } catch (e: Exception) {
                 Log.e("ViagemViewModel", "Erro na busca reativa", e)
             }
         }
     }
+
+    private fun String.normalizar(): String =
+        Normalizer.normalize(this, Normalizer.Form.NFD)
+            .replace(Regex("\\p{InCombiningDiacriticalMarks}+"), "")
+            .lowercase()
+            .trim()
 
     fun prepararEdicao(viagem: Viagem) {
         viagemId = viagem.id

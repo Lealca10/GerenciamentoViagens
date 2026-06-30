@@ -10,7 +10,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BeachAccess
 import androidx.compose.material.icons.filled.BusinessCenter
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,8 +28,32 @@ fun TripsListScreen(nav: NavHostController, vm: ViagemViewModel, userId: Int) {
     val viagens by vm.viagens.collectAsState()
     val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
 
+    var viagemParaExcluir by remember { mutableStateOf<Viagem?>(null) }
+
     LaunchedEffect(userId) {
         vm.carregarViagens(userId)
+    }
+
+    // Dialog de confirmação de exclusão
+    viagemParaExcluir?.let { viagem ->
+        AlertDialog(
+            onDismissRequest = { viagemParaExcluir = null },
+            title = { Text("Excluir viagem") },
+            text = { Text("Deseja excluir a viagem para ${viagem.destino}?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    vm.excluirViagem(viagem)
+                    viagemParaExcluir = null
+                }) {
+                    Text("Excluir", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viagemParaExcluir = null }) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -46,7 +69,12 @@ fun TripsListScreen(nav: NavHostController, vm: ViagemViewModel, userId: Int) {
         }
     ) { padding ->
         if (viagens.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
                 Text("Nenhuma viagem cadastrada.")
             }
         } else {
@@ -60,7 +88,14 @@ fun TripsListScreen(nav: NavHostController, vm: ViagemViewModel, userId: Int) {
                 items(viagens) { viagem ->
                     Card(
                         modifier = Modifier
-                            .fillMaxWidth(),
+                            .fillMaxWidth()
+                            .combinedClickable(
+                                onClick = { /* clique simples não faz nada */ },
+                                onLongClick = {
+                                    vm.prepararEdicao(viagem)
+                                    nav.navigate("new_trip")
+                                }
+                            ),
                         elevation = CardDefaults.cardElevation(4.dp)
                     ) {
                         Row(
@@ -75,9 +110,9 @@ fun TripsListScreen(nav: NavHostController, vm: ViagemViewModel, userId: Int) {
                                 modifier = Modifier.size(48.dp),
                                 tint = MaterialTheme.colorScheme.primary
                             )
-                            
+
                             Spacer(modifier = Modifier.width(16.dp))
-                            
+
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(text = viagem.destino, style = MaterialTheme.typography.titleLarge)
                                 Text(
@@ -89,18 +124,15 @@ fun TripsListScreen(nav: NavHostController, vm: ViagemViewModel, userId: Int) {
                                     style = MaterialTheme.typography.bodySmall,
                                     color = Color.Gray
                                 )
+                                Text(
+                                    text = "Segure para editar",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.Gray.copy(alpha = 0.6f)
+                                )
                             }
-                            
-                            Row {
-                                IconButton(onClick = { 
-                                    vm.prepararEdicao(viagem)
-                                    nav.navigate("new_trip")
-                                }) {
-                                    Icon(Icons.Default.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.primary)
-                                }
-                                IconButton(onClick = { vm.excluirViagem(viagem) }) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Excluir", tint = Color.Red)
-                                }
+
+                            IconButton(onClick = { viagemParaExcluir = viagem }) {
+                                Icon(Icons.Default.Delete, contentDescription = "Excluir", tint = Color.Red)
                             }
                         }
                     }

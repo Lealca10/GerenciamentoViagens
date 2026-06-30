@@ -11,6 +11,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
+import java.text.Normalizer
 import java.util.Locale
 
 class LocationHelper(private val context: Context) {
@@ -49,24 +50,26 @@ class LocationHelper(private val context: Context) {
 
     @SuppressLint("MissingPermission")
     fun getCidadeAtualFlow(): Flow<String?> = callbackFlow {
-        val geocoder = Geocoder(context, Locale.getDefault())
+        val geocoder = Geocoder(context, Locale("pt", "BR"))
 
         val locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 val location = result.lastLocation ?: return
-                
+
                 launch(Dispatchers.IO) {
                     try {
                         @Suppress("DEPRECATION")
                         val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
                         val address = addresses?.firstOrNull()
-                        
-                        // Busca o nome da cidade tentando vários campos possíveis
-                        val cidade = address?.locality ?: address?.subAdminArea ?: address?.subLocality ?: address?.adminArea
-                        
+
+                        val cidade = address?.locality
+                            ?: address?.subAdminArea
+                            ?: address?.subLocality
+                            ?: address?.adminArea
+
                         if (cidade != null) {
                             Log.d("LocationHelper", "Cidade atualizada: $cidade")
-                            trySend(cidade)
+                            trySend(cidade.normalizar())
                         }
                     } catch (e: Exception) {
                         Log.e("LocationHelper", "Erro no Geocoder", e)
@@ -75,7 +78,6 @@ class LocationHelper(private val context: Context) {
             }
         }
 
-        // Intervalo de 1 segundo para resposta imediata
         val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000)
             .setMinUpdateIntervalMillis(500)
             .build()
@@ -86,7 +88,6 @@ class LocationHelper(private val context: Context) {
             Looper.getMainLooper()
         )
 
-        // Pega a última conhecida para carregar instantaneamente ao abrir
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
             if (location != null) {
                 launch(Dispatchers.IO) {
@@ -94,8 +95,10 @@ class LocationHelper(private val context: Context) {
                         @Suppress("DEPRECATION")
                         val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
                         val cidade = addresses?.firstOrNull()?.locality
-                        if (cidade != null) trySend(cidade)
-                    } catch (e: Exception) {}
+                        if (cidade != null) trySend(cidade.normalizar())
+                    } catch (e: Exception) {
+                        Log.e("LocationHelper", "Erro no lastLocation Geocoder", e)
+                    }
                 }
             }
         }
@@ -105,3 +108,9 @@ class LocationHelper(private val context: Context) {
         }
     }
 }
+
+private fun String.normalizar(): String =
+    Normalizer.normalize(this, Normalizer.Form.NFD)
+        .replace(Regex("\\p{InCombiningDiacriticalMarks}+"), "")
+        .lowercase()
+        .trim()

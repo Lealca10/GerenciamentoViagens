@@ -23,9 +23,14 @@ import java.util.*
 fun NewTripScreen(nav: NavHostController, vm: ViagemViewModel, userId: Int) {
     val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     val isEditing = vm.viagemId != null
-    
+
     var showStartPicker by remember { mutableStateOf(false) }
     var showEndPicker by remember { mutableStateOf(false) }
+
+    // Estado local totalmente desacoplado do ViewModel
+    // O ViewModel só é atualizado no momento de salvar
+    var destinoLocal by remember { mutableStateOf(vm.destino) }
+    var orcamentoLocal by remember { mutableStateOf(vm.orcamento) }
 
     Scaffold(
         topBar = {
@@ -48,16 +53,21 @@ fun NewTripScreen(nav: NavHostController, vm: ViagemViewModel, userId: Int) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            TextField(
-                value = vm.destino,
-                onValueChange = { vm.destino = it },
+            OutlinedTextField(
+                value = destinoLocal,
+                onValueChange = { destinoLocal = it }, // só atualiza o estado local
                 label = { Text("Destino") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text("Tipo de Viagem", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.align(Alignment.Start))
+            Text(
+                "Tipo de Viagem",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.align(Alignment.Start)
+            )
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -77,35 +87,33 @@ fun NewTripScreen(nav: NavHostController, vm: ViagemViewModel, userId: Int) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Data Início
             OutlinedButton(
                 onClick = { showStartPicker = true },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = if (vm.dataInicio == null) "Data de Início" 
-                           else "Início: ${dateFormatter.format(Date(vm.dataInicio!!))}"
+                    text = if (vm.dataInicio == null) "Data de Início"
+                    else "Início: ${dateFormatter.format(Date(vm.dataInicio!!))}"
                 )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Data Fim
             OutlinedButton(
                 onClick = { showEndPicker = true },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = if (vm.dataFim == null) "Data de Fim" 
-                           else "Fim: ${dateFormatter.format(Date(vm.dataFim!!))}"
+                    text = if (vm.dataFim == null) "Data de Fim"
+                    else "Fim: ${dateFormatter.format(Date(vm.dataFim!!))}"
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            TextField(
-                value = vm.orcamento,
-                onValueChange = { vm.orcamento = it },
+            OutlinedTextField(
+                value = orcamentoLocal,
+                onValueChange = { orcamentoLocal = it }, // só atualiza o estado local
                 label = { Text("Orçamento (R$)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
@@ -115,11 +123,16 @@ fun NewTripScreen(nav: NavHostController, vm: ViagemViewModel, userId: Int) {
 
             Button(
                 onClick = {
+                    // Sincroniza com o ViewModel apenas ao salvar
+                    vm.destino = destinoLocal
+                    vm.orcamento = orcamentoLocal
                     vm.salvarViagem(userId) {
                         nav.popBackStack()
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(50.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
             ) {
                 Text(if (isEditing) "Salvar Alterações" else "Salvar Viagem")
             }
