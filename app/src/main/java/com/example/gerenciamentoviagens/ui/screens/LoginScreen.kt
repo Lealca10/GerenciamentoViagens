@@ -1,80 +1,117 @@
 package com.example.gerenciamentoviagens.ui.screens
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.gerenciamentoviagens.ui.components.PasswordField
 import com.example.gerenciamentoviagens.viewmodel.AuthViewModel
 import com.example.gerenciamentoviagens.R
 
-
 @Composable
 fun LoginScreen(nav: NavHostController, vm: AuthViewModel) {
+    val blue = Color(0xFF3D5A99)
+
+    var emailLocal by remember { mutableStateOf(vm.email) }
+    var passwordLocal by remember { mutableStateOf(vm.password) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(horizontal = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
 
+        // Logo
         Image(
             painter = painterResource(id = R.drawable.aviao),
             contentDescription = "Logo",
-            modifier = Modifier
-                .size(140.dp)
-                .padding(bottom = 16.dp)
+            modifier = Modifier.size(120.dp)
         )
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         Text(
             text = "Bem-vindo",
-            style = MaterialTheme.typography.headlineMedium
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF1A1A2E)
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Text(
+            text = "Faça login para continuar",
+            fontSize = 14.sp,
+            color = Color.Gray
+        )
 
-        // 📧 EMAIL
-        TextField(
-            value = vm.email,
-            onValueChange = { vm.email = it },
-            label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth(),
-            //shape = RoundedCornerShape(12.dp)
+        Spacer(modifier = Modifier.height(40.dp))
+
+        // Email
+        OutlinedTextField(
+            value = emailLocal,
+            onValueChange = {
+                emailLocal = it
+                vm.email = it
+            },
+            label = { Text("E-mail") },
+            leadingIcon = {
+                Icon(Icons.Default.Email, contentDescription = null, tint = blue)
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = blue,
+                focusedLabelColor = blue,
+                cursorColor = blue
+            ),
+            modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 🔒 SENHA
+        // Senha
         PasswordField(
-            value = vm.password,
-            onValueChange = { vm.password = it },
-            label = "Senha"
+            value = passwordLocal,
+            onValueChange = {
+                passwordLocal = it
+                vm.password = it
+            },
+            label = "Senha",
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = blue,
+                focusedLabelColor = blue,
+                cursorColor = blue
+            )
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // 🔘 BOTÃO LOGIN
+        // Esqueci a senha alinhado à direita
+        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+            TextButton(onClick = { nav.navigate("forgot") }) {
+                Text("Esqueci a senha", color = blue, fontSize = 13.sp)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Botão Login
         Button(
             onClick = {
                 vm.login {
@@ -83,32 +120,33 @@ fun LoginScreen(nav: NavHostController, vm: AuthViewModel) {
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(50.dp),
-            shape = RoundedCornerShape(12.dp)
+                .height(52.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = blue)
         ) {
-            Text("Entrar")
+            Text("Entrar", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
-        // 🔗 LINKS LADO A LADO
+        // Novo usuário
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            Text("Não tem uma conta?", color = Color.Gray, fontSize = 14.sp)
             TextButton(onClick = { nav.navigate("register") }) {
-                Text("Novo usuário")
-            }
-
-            TextButton(onClick = { nav.navigate("forgot") }) {
-                Text("Esqueci a senha")
+                Text("Criar conta", color = blue, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
             }
         }
 
-        // ❌ ERRO
+        // Erro
         if (vm.errorMessage.isNotEmpty()) {
             Spacer(modifier = Modifier.height(8.dp))
-            Text(vm.errorMessage, color = Color.Red)
+            Text(
+                text = vm.errorMessage,
+                color = MaterialTheme.colorScheme.error,
+                fontSize = 13.sp
+            )
         }
     }
 }
